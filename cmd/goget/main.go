@@ -7,7 +7,7 @@ import (
 
 	"os"
 
-	download "github.com/joeybloggs/go-download"
+	download "github.com/admpub/go-download"
 	"github.com/vbauerster/mpb"
 )
 

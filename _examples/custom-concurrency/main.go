@@ -4,7 +4,7 @@ import (
 	"log"
 	"math"
 
-	download "github.com/joeybloggs/go-download"
+	download "github.com/admpub/go-download"
 )
 
 func main() {
