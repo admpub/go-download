@@ -4,28 +4,54 @@ import (
 	"fmt"
 	"io"
 	"log"
-
+	"net/http"
+	"net/http/cookiejar"
 	"os"
 
-	download "github.com/admpub/go-download"
-	"github.com/vbauerster/mpb"
+	download "github.com/admpub/go-download/v2"
+	"github.com/vbauerster/mpb/v6"
+	"github.com/vbauerster/mpb/v6/decor"
+	"github.com/webx-top/com/httpClientOptions"
 )
+
+// NewJar Cookie record Jar
+func newJar() *cookiejar.Jar {
+	cookieJar, _ := cookiejar.New(nil)
+	return cookieJar
+}
 
 func main() {
 
 	url := os.Args[len(os.Args)-1]
 
-	progress := mpb.New().SetWidth(80)
-	defer progress.Stop()
+	progress := mpb.New(mpb.WithWidth(80))
+	defer progress.Wait()
 
 	options := &download.Options{
 		Proxy: func(name string, download int, size int64, r io.Reader) io.Reader {
-			bar := progress.AddBar(size).
-				PrependName(fmt.Sprintf("%s-%d", name, download), 0, 0).
-				PrependCounters("%3s / %3s", mpb.UnitBytes, 18, mpb.DwidthSync|mpb.DextraSpace).
-				AppendPercentage(5, 0)
-
+			name = fmt.Sprintf("%s-%d", name, download)
+			bar := progress.AddBar(
+				size,
+				mpb.PrependDecorators(
+					decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
+					decor.CountersNoUnit(`%3d / %3d`, decor.WC{W: 18}),
+				),
+				mpb.AppendDecorators(
+					decor.Percentage(decor.WC{W: 5}),
+				),
+			)
 			return bar.ProxyReader(r)
+		},
+		Client: func() http.Client {
+			client := download.NewHTTPClient(
+				httpClientOptions.CheckRedirect(func(req *http.Request, via []*http.Request) error {
+					log.Printf("Redirect: %v\n", req.URL)
+					return nil
+				}),
+				httpClientOptions.CookieJar(newJar()),
+				httpClientOptions.InsecureSkipVerify(),
+			)
+			return *client
 		},
 	}
 
@@ -52,5 +78,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Success. %s saved.", name)
+	log.Printf("Success. %s saved.\n", name)
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	download "github.com/admpub/go-download"
+	download "github.com/admpub/go-download/v2"
 )
 
 func main() {
