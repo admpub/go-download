@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -9,8 +8,7 @@ import (
 	"os"
 
 	download "github.com/admpub/go-download/v2"
-	"github.com/vbauerster/mpb/v6"
-	"github.com/vbauerster/mpb/v6/decor"
+	"github.com/admpub/go-download/v2/progressbar"
 	"github.com/webx-top/com/httpClientOptions"
 )
 
@@ -21,27 +19,8 @@ func newJar() *cookiejar.Jar {
 }
 
 func main() {
-
 	url := os.Args[len(os.Args)-1]
-
-	progress := mpb.New(mpb.WithWidth(80))
-	defer progress.Wait()
-
 	options := &download.Options{
-		Proxy: func(name string, download int, size int64, r io.Reader) io.Reader {
-			name = fmt.Sprintf("%s-%d", name, download)
-			bar := progress.AddBar(
-				size,
-				mpb.PrependDecorators(
-					decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
-					decor.CountersNoUnit(`%3d / %3d`, decor.WC{W: 18}),
-				),
-				mpb.AppendDecorators(
-					decor.Percentage(decor.WC{W: 5}),
-				),
-			)
-			return bar.ProxyReader(r)
-		},
 		Client: func() http.Client {
 			client := download.NewHTTPClient(
 				httpClientOptions.CheckRedirect(func(req *http.Request, via []*http.Request) error {
@@ -54,7 +33,8 @@ func main() {
 			return *client
 		},
 	}
-
+	progress := progressbar.New(options)
+	defer progress.Wait()
 	f, err := download.Open(url, options)
 	if err != nil {
 		log.Fatal(err)
