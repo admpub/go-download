@@ -20,18 +20,22 @@ func New(opt *download.Options, width ...int) *mpb.Progress {
 	progress := mpb.New(mpb.WithWidth(w))
 	//defer progress.Wait()
 	opt.Proxy = func(name string, download int, size int64, r io.Reader) io.Reader {
-		name = fmt.Sprintf("%s-%d", name, download)
-		bar := progress.AddBar(
-			size,
-			mpb.PrependDecorators(
-				decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
-				decor.CountersNoUnit(`%3d / %3d`, decor.WC{W: 18}),
-			),
-			mpb.AppendDecorators(
-				decor.Percentage(decor.WC{W: 5}),
-			),
-		)
+		bar := AddBar(progress, name, download, size)
 		return bar.ProxyReader(r)
 	}
 	return progress
+}
+
+func AddBar(progress *mpb.Progress, name string, download int, size int64) *mpb.Bar {
+	name = fmt.Sprintf("%s-%d", name, download)
+	return progress.AddBar(
+		size,
+		mpb.PrependDecorators(
+			decor.Name(name, decor.WC{W: len(name) + 1, C: decor.DidentRight}),
+			decor.CountersNoUnit(`%3d / %3d`, decor.WC{W: 18}),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(decor.WC{W: 5}),
+		),
+	)
 }
