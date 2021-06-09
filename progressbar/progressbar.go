@@ -20,14 +20,16 @@ func New(opt *download.Options, width ...int) *mpb.Progress {
 	progress := mpb.New(mpb.WithWidth(w))
 	//defer progress.Wait()
 	opt.Proxy = func(name string, download int, size int64, r io.Reader) io.Reader {
-		bar := AddBar(progress, name, download, size)
+		bar := AddBar(progress, name, size, download)
 		return bar.ProxyReader(r)
 	}
 	return progress
 }
 
-func AddBar(progress *mpb.Progress, name string, download int, size int64) *mpb.Bar {
-	name = fmt.Sprintf("%s-%d", name, download)
+func AddBar(progress *mpb.Progress, name string, size int64, partNo ...int) *mpb.Bar {
+	if len(partNo) > 0 {
+		name = fmt.Sprintf("%s-%d", name, partNo[0])
+	}
 	return progress.AddBar(
 		size,
 		mpb.PrependDecorators(
