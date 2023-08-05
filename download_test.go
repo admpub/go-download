@@ -465,3 +465,14 @@ func TestContextTimeout(t *testing.T) {
 		t.Fatalf("Expected prefix '%s' and suffix '%s' but got '%s'", prefix, suffix, err.Error())
 	}
 }
+
+// func TestSmallFile(t *testing.T) {
+// 	var fileURL = `http://smallerfile.coscms.com/test.jpg`
+// 	size, err := Download(fileURL, `./testdata/test.jpg`, nil)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if size <= 0 {
+// 		t.Fatal(`file size is zero`)
+// 	}
+// }
