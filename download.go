@@ -23,10 +23,9 @@ const (
 )
 
 var (
-	_                      io.Reader = (*File)(nil)
-	fileMode                         = os.FileMode(0770)
-	defaultTime                      = time.Time{}
-	ErrMaximumSizeExceeded           = errors.New("Maximum size exceeded")
+	_           io.Reader = (*File)(nil)
+	fileMode              = os.FileMode(0770)
+	defaultTime           = time.Time{}
 )
 
 // Options contains any specific configuration values
@@ -113,6 +112,16 @@ func OpenContext(ctx context.Context, url string, options *Options) (*File, erro
 	}
 	resp, err := client.Do(req)
 	if err != nil {
+		if errors.Is(err, io.EOF) {
+			// not all services support HEAD requests
+			log.Println("notice: unexpected HEAD response, proceeding with download.")
+			err = f.download(ctx)
+			if err != nil {
+				f.closeFileHandles()
+				return nil, err
+			}
+			return f, nil
+		}
 		return nil, err
 	}
 
@@ -208,7 +217,7 @@ func (f *File) download(ctx context.Context) error {
 func (f *File) downloadRangeBytes(ctx context.Context) (err error) {
 
 	if f.size <= 0 {
-		return fmt.Errorf("Invalid content length '%d'", f.size)
+		return fmt.Errorf("%w '%d'", ErrInvalidContentLength, f.size)
 	}
 
 	var resume bool
@@ -395,7 +404,7 @@ func (f *File) downloadPartial(ctx context.Context, resumeable bool, idx int, st
 func (f *File) Stat() (os.FileInfo, error) {
 
 	if f.modTime.IsZero() {
-		return nil, &os.PathError{Op: "stat", Path: filepath.Base(f.url), Err: errors.New("bad file descriptor")}
+		return nil, &os.PathError{Op: "stat", Path: filepath.Base(f.url), Err: ErrBadFileDescriptor}
 	}
 
 	return &fileInfo{

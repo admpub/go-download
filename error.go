@@ -1,8 +1,15 @@
 package download
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
+	ErrMaximumSizeExceeded  = errors.New("Maximum size exceeded")
+	ErrInvalidContentLength = errors.New(`Invalid content length`)
+	ErrBadFileDescriptor    = errors.New("bad file descriptor")
+
 	_ error = (*InvalidResponseCode)(nil)
 	_ error = (*DeadlineExceeded)(nil)
 	_ error = (*Canceled)(nil)
