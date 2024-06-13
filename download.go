@@ -31,11 +31,12 @@ var (
 // Options contains any specific configuration values
 // for downloading/opening a file
 type Options struct {
-	Concurrency ConcurrencyFn
-	Proxy       ProxyFn
-	Client      ClientFn
-	Request     RequestFn
-	MaxSize     int64
+	Concurrency  ConcurrencyFn
+	Proxy        ProxyFn
+	Client       ClientFn
+	Request      RequestFn
+	DisableChunk bool
+	MaxSize      int64
 }
 
 // RequestFn allows for additional information, such as http headers, to the http request
@@ -97,18 +98,28 @@ func OpenContext(ctx context.Context, url string, options *Options) (*File, erro
 		options:  options,
 	}
 
+	if f.options != nil && f.options.DisableChunk {
+		err := f.download(ctx)
+		if err != nil {
+			f.closeFileHandles()
+			return nil, err
+		}
+		return f, nil
+	}
+
 	req, err := http.NewRequest(http.MethodHead, f.url, nil)
 	if err != nil {
 		return nil, err
 	}
-	req = req.WithContext(ctx)
-	if f.options != nil && f.options.Request != nil {
-		f.options.Request(req)
-	}
-
 	var client http.Client
-	if f.options != nil && f.options.Client != nil {
-		client = f.options.Client()
+	req = req.WithContext(ctx)
+	if f.options != nil {
+		if f.options.Request != nil {
+			f.options.Request(req)
+		}
+		if f.options.Client != nil {
+			client = f.options.Client()
+		}
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -157,16 +168,16 @@ func (f *File) download(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	var client http.Client
 	req = req.WithContext(ctx)
 
-	if f.options != nil && f.options.Request != nil {
-		f.options.Request(req)
-	}
-
-	var client http.Client
-
-	if f.options != nil && f.options.Client != nil {
-		client = f.options.Client()
+	if f.options != nil {
+		if f.options.Request != nil {
+			f.options.Request(req)
+		}
+		if f.options.Client != nil {
+			client = f.options.Client()
+		}
 	}
 
 	resp, err := client.Do(req)
