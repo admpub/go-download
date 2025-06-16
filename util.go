@@ -1,6 +1,7 @@
 package download
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"os"
@@ -10,7 +11,11 @@ import (
 )
 
 func Download(url, saveName string, options *Options) (int64, error) {
-	f, err := Open(url, options)
+	return DownloadContext(context.Background(), url, saveName, options)
+}
+
+func DownloadContext(ctx context.Context, url, saveName string, options *Options) (int64, error) {
+	f, err := OpenContext(ctx, url, options)
 	if err != nil {
 		return 0, err
 	}

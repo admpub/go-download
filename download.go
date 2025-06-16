@@ -107,12 +107,11 @@ func OpenContext(ctx context.Context, url string, options *Options) (*File, erro
 		return f, nil
 	}
 
-	req, err := http.NewRequest(http.MethodHead, f.url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, f.url, nil)
 	if err != nil {
 		return nil, err
 	}
 	var client http.Client
-	req = req.WithContext(ctx)
 	if f.options != nil {
 		if f.options.Request != nil {
 			f.options.Request(req)
@@ -164,13 +163,11 @@ func OpenContext(ctx context.Context, url string, options *Options) (*File, erro
 
 func (f *File) download(ctx context.Context) error {
 
-	req, err := http.NewRequest(http.MethodGet, f.url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.url, nil)
 	if err != nil {
 		return err
 	}
 	var client http.Client
-	req = req.WithContext(ctx)
-
 	if f.options != nil {
 		if f.options.Request != nil {
 			f.options.Request(req)
@@ -369,10 +366,9 @@ func (f *File) downloadPartial(ctx context.Context, resumeable bool, idx int, st
 	}
 
 	var req *http.Request
-	if req, err = http.NewRequest(http.MethodGet, f.url, nil); err != nil {
+	if req, err = http.NewRequestWithContext(ctx, http.MethodGet, f.url, nil); err != nil {
 		return
 	}
-	req = req.WithContext(ctx)
 	req.Header.Add("Range", fmt.Sprintf("bytes=%d-%d", start, end))
 
 	if f.options != nil && f.options.Request != nil {
